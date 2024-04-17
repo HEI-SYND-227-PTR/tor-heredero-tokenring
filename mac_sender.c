@@ -3,9 +3,7 @@ void MacSender(void *argument)
 {
 	// TODO
 	struct queueMsg_t queueMsg;	// queue message
-	char* msg;
-	char msgToSend[255];
-	uint8_t msgToSendPtr=0;
+	uint8_t* msg;
 	osStatus_t retCode;					// return error code
 	
 	for(;;) {
@@ -18,11 +16,22 @@ void MacSender(void *argument)
 			NULL,
 			osWaitForever);
 		CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+		msg = queueMsg.anyPtr;
 		
 		switch(queueMsg.type) {
 			
 			case TOKEN:
-				
+				msg[gTokenInterface.myAddress] = gTokenInterface.station_list[gTokenInterface.myAddress];
+				for(uint8_t i = 1; i < TOKENSIZE-2; i++) {
+					gTokenInterface.station_list[i] = msg[i];
+				}
+				queueMsg.type = TO_PHY;
+				retCode = osMessageQueuePut(
+					queue_phyS_id,
+					&queueMsg,
+					osPriorityNormal,
+					osWaitForever);
+				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				break;
 			
 			
@@ -32,15 +41,24 @@ void MacSender(void *argument)
 			
 			
 			case NEW_TOKEN: 
-				for(uint8_t i = 0; i < 15; i++) {
-					if(i == gTokenInterface.myAddress) {
-						gTokenInterface.station_list[i] = (0x1 << TIME_SAPI) & (gTokenInterface.connected << CHAT_SAPI);
-					} else {
-						gTokenInterface.station_list[i] = 0;
-					}
+				msg = osMemoryPoolAlloc(memPool, osWaitForever);
+				msg[0] = TOKEN_TAG;
+				
+				for(uint8_t i = 1; i < sizeof(TOKENSIZE-2); i++) {
+					msg[i] = 0;
 				}
-				msg = osMemoryPollAlloc(memPool, osWaitForever);
+				gTokenInterface.station_list[gTokenInterface.myAddress] = (0x1 << TIME_SAPI) + (gTokenInterface.connected << CHAT_SAPI);
+				msg[gTokenInterface.myAddress+1] = gTokenInterface.station_list[gTokenInterface.myAddress];
+				
 				queueMsg.type = TO_PHY;
+				queueMsg.anyPtr = msg;
+				
+				retCode = osMessageQueuePut(
+					queue_phyS_id,
+					&queueMsg,
+					osPriorityNormal,
+					osWaitForever);
+				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				break;
 			
 			
