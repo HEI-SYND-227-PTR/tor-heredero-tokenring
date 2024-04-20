@@ -56,6 +56,7 @@ extern osEventFlagsId_t  	eventFlag_id;
 void CheckRetCode(uint32_t retCode,uint32_t lineNumber,char * fileName,uint8_t mode);
 void DebugFrame(char * stringP);
 void DebugMacFrame(uint8_t preChar,uint8_t * stringP);
+uint8_t Checksum(uint8_t* frame);
 
 //--------------------------------------------------------------------------------
 // structure for system usage

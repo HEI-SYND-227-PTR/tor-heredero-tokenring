@@ -287,6 +287,20 @@ void CheckRetCode(uint32_t retCode,uint32_t lineNumber,char * fileName,uint8_t m
 }
 
 //////////////////////////////////////////////////////////////////////////////////
+/// \brief Calculate the checksum of a frame
+/// \param frame pointer to the frame to calculate the checksum
+/// \return the checksum
+//////////////////////////////////////////////////////////////////////////////////
+uint8_t Checksum(uint8_t * frame) {
+	uint8_t checksum = 0;
+	uint8_t length = frame[2];	
+	for (uint8_t i = 0; i < length+3; i++) {
+		checksum = checksum + frame[i];
+	}
+	return checksum;
+}
+
+//////////////////////////////////////////////////////////////////////////////////
 /// \brief Configure the clock @ 216MHz and peripheral clocks
 //////////////////////////////////////////////////////////////////////////////////
 static void SystemClock_Config (void) {

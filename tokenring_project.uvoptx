@@ -145,7 +145,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>ST-LINKIII-KEIL_SWO</Key>
-          <Name>-U0671FF485057775187193017 -O8398 -SF10000 -C0 -A0 -I0 -HNlocalhost -HP7184 -P2 -N00("ARM CoreSight SW-DP (ARM Core") -D00(5BA02477) -L00(0) -TO131075 -TC216000000 -TT216000000 -TP21 -TDS806B -TDT0 -TDC1F -TIE1 -TIP1 -FO7 -FD20010000 -FC1000 -FN1 -FF0STM32F7x_1024.FLM -FS08000000 -FL0100000 -FP0($$Device:STM32F746NGHx$CMSIS\Flash\STM32F7x_1024.FLM)</Name>
+          <Name>-U066DFF485153826687131237 -O8398 -SF10000 -C0 -A0 -I0 -HNlocalhost -HP7184 -P2 -N00("ARM CoreSight SW-DP (ARM Core") -D00(5BA02477) -L00(0) -TO131075 -TC216000000 -TT216000000 -TP21 -TDS806B -TDT0 -TDC1F -TIE1 -TIP1 -FO7 -FD20010000 -FC1000 -FN1 -FF0STM32F7x_1024.FLM -FS08000000 -FL0100000 -FP0($$Device:STM32F746NGHx$CMSIS\Flash\STM32F7x_1024.FLM) -WA0 -WE0 -WVCE4 -WS2710 -WM0 -WP2</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -159,6 +159,21 @@
           <count>0</count>
           <WinNumber>1</WinNumber>
           <ItemText>sai</ItemText>
+        </Ww>
+        <Ww>
+          <count>1</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>gTokenInterface</ItemText>
+        </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>t</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>lastToken</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>
@@ -178,12 +193,12 @@
         </Mm>
       </MemoryWindow3>
       <ScvdPack>
-        <Filename>C:\Keil_v5\ARM\CMSIS\5.9.0\CMSIS\RTOS2\RTX\RTX5.scvd</Filename>
+        <Filename>C:\Users\remi\AppData\Local\Arm\Packs\ARM\CMSIS\5.9.0\CMSIS\RTOS2\RTX\RTX5.scvd</Filename>
         <Type>ARM.CMSIS.5.9.0</Type>
         <SubType>1</SubType>
       </ScvdPack>
       <ScvdPack>
-        <Filename>C:\Keil_v5\Keil\ARM_Compiler\1.7.2\EventRecorder.scvd</Filename>
+        <Filename>C:\Users\remi\AppData\Local\Arm\Packs\Keil\ARM_Compiler\1.7.2\EventRecorder.scvd</Filename>
         <Type>Keil.ARM_Compiler.1.7.2</Type>
         <SubType>1</SubType>
       </ScvdPack>
