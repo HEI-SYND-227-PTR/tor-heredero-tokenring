@@ -27,13 +27,13 @@
 #define TIME_SAPI 				0x03   		// sapi time application number (0-7)
 #define BROADCAST_ADDRESS	0x0F			// broadcast address
 #define TOKEN_TAG					0xFF			// tag of tokenring frame
-#define TOKENSIZE					19				// size of a token frame
+#define TOKENSIZE					19				// size of a token frame (16 stations + 1 tag + start + end)
 #define STX 							0x02			// any frame start char
 #define ETX								0x03			// any frame end char
 #define CONTINUE					0x0				// for check return code halt
 
 //--------------------------------------------------------------------------------
-// identifiers used in more the one file (thread)
+// identifiers used in more the one file (thread) 
 //--------------------------------------------------------------------------------
 extern GListener 	gl;
 extern osMemoryPoolId_t memPool;
