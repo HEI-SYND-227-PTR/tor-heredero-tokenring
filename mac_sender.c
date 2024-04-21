@@ -1,4 +1,5 @@
 #include "main.h"
+#include <cstdio>
 #include <string.h>
 
 uint8_t* lastToken;
@@ -57,22 +58,18 @@ void MacSender(void *argument) {
 					&queueMsg,
 					osPriorityNormal,
 					osWaitForever);
+				printf("Token sended\r\n");
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				// Send one msg from internal queue if exist
-				if (osMemoryPoolGetCount(queue_macData_id) != 0) { // Message in Queue
-					retCode = osMessageQueueGet(
-						queue_macData_id,
-						&queueMsg,
-						NULL,
-						osWaitForever);
-					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				//if (osMemoryPoolGetCount(queue_macData_id) != 0) { // Message in Queue
+				if(osMessageQueueGet(queue_macData_id, &queueMsg, NULL, 0) == 0){
 					queueMsg.type = TO_PHY;
 					retCode = osMessageQueuePut(
 						queue_phyS_id,
 						&queueMsg,
 						osPriorityNormal,
-						osWaitForever);
+						0);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				}
 
@@ -83,7 +80,7 @@ void MacSender(void *argument) {
 					queue_phyS_id,
 					&queueMsg,
 					osPriorityNormal,
-					osWaitForever);
+					0);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				break;
 			}
@@ -97,19 +94,34 @@ void MacSender(void *argument) {
 				length = msg[2];
 				status.raw = msg[3+length];
 
-				if(status.read == 0) {
+				if(src.addr == BROADCAST_ADDRESS) {
+					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				}
+
+				if(status.read == 1) {
 					if(status.ack == 0) {
 						msg = osMemoryPoolAlloc(memPool, osWaitForever);
 						queueMsg.type = TO_PHY;
-						queueMsg.anyPtr = 
+						//queueMsg.anyPtr = 
 
 					} else {
 
 					}
 
 				} else {
+					// Send original message to PHY
+					queueMsg.type = TO_PHY;
+					retCode = osMessageQueuePut(
+						queue_macData_id,
+						&queueMsg,
+						osPriorityNormal,
+						0);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+
+					// Send error message to LCD
 					strPtr = osMemoryPoolAlloc(memPool, osWaitForever);
-					sprintf(strPtr, "Dest. %d couldn't read message from %d\0", dst.add+1, src.addr+1);
+					sprintf(strPtr, "Dest. %d couldn't read message from %d\0", dst.addr+1, src.addr+1);
 					queueMsg.type = MAC_ERROR;
 					queueMsg.addr = src.addr;
 					queueMsg.sapi = src.sapi;
@@ -118,7 +130,7 @@ void MacSender(void *argument) {
 						queue_lcd_id,
 						&queueMsg,
 						osPriorityNormal,
-						osWaitForever);
+						0);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				}
 				break;
@@ -184,7 +196,7 @@ void MacSender(void *argument) {
 					status.ack = 0;
 				}
 
-				msg = osMemoryPoolAlloc(memPool, osWaitForever);
+				msg = osMemoryPoolAlloc(memPool, osWaitForever); // TODO - Leak of memory
 				msg[0] = src.raw;
 				msg[1] = dst.raw;
 				msg[2] = length;
@@ -200,7 +212,7 @@ void MacSender(void *argument) {
 					queue_macData_id,
 					&queueMsg,
 					osPriorityNormal,
-					osWaitForever);
+					0);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				break;
 			}

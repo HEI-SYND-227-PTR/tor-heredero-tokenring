@@ -13,7 +13,10 @@ void send_DATA_IND(Adresse source, Adresse destination, uint8_t* dataFramePtr) {
 	queueMsg.addr = source.addr;
 	queueMsg.sapi = source.sapi;
 
-	strPtr = osMemoryPoolAlloc(memPool, osWaitForever);
+	strPtr = osMemoryPoolAlloc(memPool, 0);
+	if(strPtr == NULL) {
+		assert(false);
+	}
 
 	for(uint8_t i = 0; i < dataFramePtr[2]; i++) {
 		strPtr[i] = (char)dataFramePtr[3+i];
@@ -27,7 +30,7 @@ void send_DATA_IND(Adresse source, Adresse destination, uint8_t* dataFramePtr) {
 				queue_timeR_id,
 				&queueMsg,
 				osPriorityNormal,
-				osWaitForever);
+				0);
 			CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 			break;
 		case CHAT_SAPI:
@@ -35,7 +38,7 @@ void send_DATA_IND(Adresse source, Adresse destination, uint8_t* dataFramePtr) {
 				queue_chatR_id,
 				&queueMsg,
 				osPriorityNormal,
-				osWaitForever);
+				0);
 			CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 			break;
 		default:
@@ -57,7 +60,7 @@ void send_DATABACK(Adresse source, Adresse destination, uint8_t* dataFramePtr) {
 		queue_macS_id,
 		&queueMsg,
 		osPriorityNormal,
-		osWaitForever);
+		0);
 	CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 	
 }
@@ -102,6 +105,7 @@ void MacReceiver(void *argument) {
 						&queueMsg,
 						osPriorityNormal,
 						osWaitForever);
+						printf("Token received\r\n");
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				} else {
@@ -142,7 +146,7 @@ void MacReceiver(void *argument) {
 									queue_phyS_id,
 									&queueMsg,
 									osPriorityNormal,
-									osWaitForever);
+									0);
 								CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 							}
 						
@@ -166,7 +170,7 @@ void MacReceiver(void *argument) {
 							queue_phyS_id,
 							&queueMsg,
 							osPriorityNormal,
-							osWaitForever);
+							0);
 						CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 					}
 					
