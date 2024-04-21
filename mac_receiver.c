@@ -4,25 +4,6 @@
 #include <cstdint>
 #include <stdint.h>
 
-
-typedef union {
-	struct {
-		uint8_t sapi: 3;	// MSB
-		uint8_t addr: 4;
-		uint8_t nothing: 1;	// LSB
-	};
-	uint8_t raw;
-} Adresse;
-
-typedef union {
-	struct {
-		uint8_t ack: 1;			// MSB
-		uint8_t read: 1;
-		uint8_t checksum: 6;	// LSB
-	};
-	uint8_t raw;
-} Status;
-
 void send_DATA_IND(Adresse source, Adresse destination, uint8_t* dataFramePtr) {
 	struct queueMsg_t queueMsg;	// queue message
 	osStatus_t retCode;			// return error code

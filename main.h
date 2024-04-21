@@ -118,3 +118,24 @@ struct queueMsg_t
 	uint8_t	addr;						///< the source or destination address
 	uint8_t sapi;						///< the source or destination SAPI
 };
+
+//--------------------------------------------------------------------------------
+// The mac control union
+//--------------------------------------------------------------------------------
+typedef union {
+	struct {
+		uint8_t sapi: 3;	// MSB
+		uint8_t addr: 4;
+		uint8_t nothing: 1;	// LSB
+	};
+	uint8_t raw;
+} Adresse;
+
+typedef union {
+	struct {
+		uint8_t ack: 1;			// MSB
+		uint8_t read: 1;
+		uint8_t checksum: 6;	// LSB
+	};
+	uint8_t raw;
+} Status;
