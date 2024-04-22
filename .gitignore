@@ -78,3 +78,8 @@
 # To explicitly override the above, define any exceptions here; e.g.:
 # !my_customized_scatter_file.sct
 .idea
+.vscode/c_cpp_properties.json
+.vscode/keil-assistant.log
+.vscode/settings.json
+.vscode/uv4.log
+.vscode/uv4.log.lock
