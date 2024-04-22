@@ -1,6 +1,8 @@
 #include "main.h"
 #include <cstdio>
+#include <stdbool.h>
 #include <string.h>
+#include <cassert>
 
 uint8_t* lastToken;
 osMessageQueueId_t queue_macData_id;
@@ -94,12 +96,10 @@ void MacSender(void *argument) {
 				length = msg[2];
 				status.raw = msg[3+length];
 
-				if(src.addr == BROADCAST_ADDRESS) {
+				if(dst.addr == BROADCAST_ADDRESS) {
 					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
-				}
-
-				if(status.read == 1) {
+				} else if(status.read == 1) {
 					if(status.ack == 0) {
 						msg = osMemoryPoolAlloc(memPool, osWaitForever);
 						queueMsg.type = TO_PHY;
@@ -133,6 +133,8 @@ void MacSender(void *argument) {
 						0);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				}
+				}
+
 				break;
 			}
 			
@@ -196,7 +198,11 @@ void MacSender(void *argument) {
 					status.ack = 0;
 				}
 
-				msg = osMemoryPoolAlloc(memPool, osWaitForever); // TODO - Leak of memory
+				msg = osMemoryPoolAlloc(memPool, 0); // TODO - Leak of memory
+				if(msg == NULL) {
+					printf("Memory allocation failed\r\n");
+					assert(false);
+				}
 				msg[0] = src.raw;
 				msg[1] = dst.raw;
 				msg[2] = length;
