@@ -1,10 +1,13 @@
 #include "main.h"
 #include <cstdio>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
 #include <cassert>
 
 uint8_t* lastToken;
+uint8_t* lastSentMsgPtr[15];
+
 osMessageQueueId_t queue_macData_id;
 const osMessageQueueAttr_t queue_macData_attr = {
 	.name = "MAC_DATA"
@@ -60,7 +63,6 @@ void MacSender(void *argument) {
 					&queueMsg,
 					osPriorityNormal,
 					osWaitForever);
-				printf("Token sended\r\n");
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				// Send one msg from internal queue if exist
@@ -99,18 +101,53 @@ void MacSender(void *argument) {
 				if(dst.addr == BROADCAST_ADDRESS) {
 					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				} else if(src.addr != gTokenInterface.myAddress) {
+					// Send original message when token is here
+					queueMsg.type = TO_PHY;
+					retCode = osMessageQueuePut(
+						queue_phyS_id,
+						&queueMsg,
+						osPriorityNormal,
+						0);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+
 				} else if(status.read == 1) {
-					if(status.ack == 0) {
-						msg = osMemoryPoolAlloc(memPool, osWaitForever);
-						queueMsg.type = TO_PHY;
-						//queueMsg.anyPtr = 
+					if(status.ack == 1) {
+						// Everything is fine, free memory
+						retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
+						CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 					} else {
+						// Checksum error, send original message again when token is here
+						if(lastSentMsgPtr[src.addr] != NULL) {
+							queueMsg.anyPtr = lastSentMsgPtr[src.addr];
+							queueMsg.type = TO_PHY;
+							retCode = osMessageQueuePut(
+								queue_macData_id,
+								&queueMsg,
+								osPriorityNormal,
+								0);
+							CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
+						} else {
+							// Error, no original message found
+							strPtr = osMemoryPoolAlloc(memPool, osWaitForever);
+							sprintf(strPtr, "Someone did shit on the ring #1\0");
+							queueMsg.type = MAC_ERROR;
+							queueMsg.addr = src.addr;
+							queueMsg.sapi = src.sapi;
+							queueMsg.anyPtr = strPtr;
+							retCode = osMessageQueuePut(
+								queue_lcd_id,
+								&queueMsg,
+								osPriorityNormal,
+								0);
+							CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+						}
 					}
 
 				} else {
-					// Send original message to PHY
+					// Send original message when token is here
 					queueMsg.type = TO_PHY;
 					retCode = osMessageQueuePut(
 						queue_macData_id,
@@ -132,7 +169,6 @@ void MacSender(void *argument) {
 						osPriorityNormal,
 						0);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
-				}
 				}
 
 				break;

@@ -1,0 +1,9 @@
+From me
+C R |
+-------------- 
+0 0 | Station isn't on the ring -> Error msg on lcd
+0 1 | Received message but checksum not ok -> Send again
+1 0 | Sapi on the station isn't connected -> Error msg on lcd
+1 1 | Everything all right -> free 
+
+Frome someone else -> Send back now

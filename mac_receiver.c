@@ -105,7 +105,6 @@ void MacReceiver(void *argument) {
 						&queueMsg,
 						osPriorityNormal,
 						osWaitForever);
-						printf("Token received\r\n");
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				} else {
@@ -127,7 +126,7 @@ void MacReceiver(void *argument) {
 							status.ack = 1;
 							
 							if(dst.sapi == CHAT_SAPI && gTokenInterface.connected ||
-								dst.sapi == TIME_SAPI && gTokenInterface.broadcastTime) {
+								dst.sapi == TIME_SAPI) {
 								// Send to Time or Chat ----------------------------
 								send_DATA_IND(src, dst, queueMsg.anyPtr);
 								status.read = 1;
@@ -152,7 +151,7 @@ void MacReceiver(void *argument) {
 						
 						} else { // for me but bad checksum
 							status.ack = 0;
-							status.read = 0;
+							status.read = gTokenInterface.connected; // Maybe it's 1
 							msg[3+length] = status.raw;
 							send_DATABACK(src, dst, queueMsg.anyPtr);
 						}
