@@ -34,6 +34,7 @@ void MacSender(void *argument) {
 	Status status;
 	osStatus_t retCode;					// return error code
 	char* strPtr;
+	SapiToken stationStatus;
 
 	lastToken = osMemoryPoolAlloc(memPool, osWaitForever);
 	queue_macData_id = osMessageQueueNew(4, sizeof(struct queueMsg_t), &queue_macData_attr);
@@ -79,7 +80,9 @@ void MacSender(void *argument) {
 
 				// Send one msg from internal queue if exist
 				//if (osMemoryPoolGetCount(queue_macData_id) != 0) { // Message in Queue
-				if(osMessageQueueGet(queue_macData_id, &queueMsg, NULL, 0) == 0){
+				retCode = osMessageQueueGet(queue_macData_id, &queueMsg, NULL, 0);
+				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				if(retCode == 0){
 					queueMsg.type = TO_PHY;
 					retCode = osMessageQueuePut(
 						queue_phyS_id,
@@ -102,7 +105,7 @@ void MacSender(void *argument) {
 				length = msg[2];
 				status.raw = msg[3+length];
 
-				if(dst.addr == BROADCAST_ADDRESS) {
+				if (dst.addr == BROADCAST_ADDRESS) {
 					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 					sendToken();
@@ -121,6 +124,8 @@ void MacSender(void *argument) {
 						// Everything is fine, free memory
 						retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 						CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+						retCode = osMemoryPoolFree(memPool, lastSentMsgPtr);
+						CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 						sendToken();
 
 					} else {
@@ -129,7 +134,7 @@ void MacSender(void *argument) {
 							//retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 							//CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
-							memcpy(queueMsg.anyPtr, lastSentMsgPtr, sizeof(lastSentMsgPtr));
+							memcpy(queueMsg.anyPtr, lastSentMsgPtr, lastSentMsgPtr[2]+4);
 							queueMsg.type = TO_PHY;
 							//queueMsg.anyPtr = lastSentMsgPtr;
 							retCode = osMessageQueuePut(
@@ -240,7 +245,7 @@ void MacSender(void *argument) {
 					status.ack = 0;
 				}
 
-				msg = osMemoryPoolAlloc(memPool, 0); // TODO - Leak of memory
+				msg = osMemoryPoolAlloc(memPool, 0);
 				if(msg == NULL) {
 					printf("Memory allocation failed #1\r\n");
 					assert(false);
@@ -254,6 +259,10 @@ void MacSender(void *argument) {
 
 				retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+
+				stationStatus.raw = lastToken[dst.addr+1];
+
+				if(stationStatus.chat == 1) {
 
 				if(dst.addr != BROADCAST_ADDRESS) {
 					if(dst.sapi == CHAT_SAPI) {
@@ -275,6 +284,21 @@ void MacSender(void *argument) {
 					osPriorityNormal,
 					0);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+
+				} else {
+					strPtr = queueMsg.anyPtr;
+					sprintf(strPtr, "%d is not online\0", dst.addr+1);
+					queueMsg.type = MAC_ERROR;
+					queueMsg.addr = src.addr;
+					queueMsg.anyPtr = strPtr;
+					retCode = osMessageQueuePut(
+						queue_lcd_id,
+						&queueMsg,
+						osPriorityNormal,
+						0);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				}
+
 				break;
 			}
 
