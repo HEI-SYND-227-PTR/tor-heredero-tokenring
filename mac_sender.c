@@ -126,10 +126,12 @@ void MacSender(void *argument) {
 					} else {
 						// Checksum error, send original message again
 						if(lastSentMsgPtr != NULL) {
-							retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
-							CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+							//retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
+							//CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+
+							memcpy(queueMsg.anyPtr, lastSentMsgPtr, sizeof(lastSentMsgPtr));
 							queueMsg.type = TO_PHY;
-							queueMsg.anyPtr = lastSentMsgPtr;
+							//queueMsg.anyPtr = lastSentMsgPtr;
 							retCode = osMessageQueuePut(
 								queue_phyS_id,
 								&queueMsg,
@@ -240,7 +242,7 @@ void MacSender(void *argument) {
 
 				msg = osMemoryPoolAlloc(memPool, 0); // TODO - Leak of memory
 				if(msg == NULL) {
-					printf("Memory allocation failed\r\n");
+					printf("Memory allocation failed #1\r\n");
 					assert(false);
 				}
 				msg[0] = src.raw;
@@ -254,8 +256,15 @@ void MacSender(void *argument) {
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				if(dst.addr != BROADCAST_ADDRESS) {
-					lastSentMsgPtr = osMemoryPoolAlloc(memPool, osWaitForever);
-					memcpy(lastSentMsgPtr, msg, length+4);
+					if(dst.sapi == CHAT_SAPI) {
+						lastSentMsgPtr = osMemoryPoolAlloc(memPool, 0);
+						if(lastSentMsgPtr == NULL) {
+							printf("Memory allocation failed #2\r\n");
+							assert(false);
+						}
+						memcpy(lastSentMsgPtr, msg, length+4);
+						// TODO test if station is online
+					}
 				}
 
 				queueMsg.anyPtr = msg;

@@ -139,3 +139,17 @@ typedef union {
 	};
 	uint8_t raw;
 } Status;
+
+typedef union {
+	struct {
+		bool_t nothing0: 1;			// MSB
+		bool_t chat: 1;
+		bool_t nothing2: 1;
+		bool_t time: 1;
+		bool_t nothing4: 1;
+		bool_t nothing5: 1;
+		bool_t nothing6: 1;
+		bool_t nothing7: 1;			// LSB
+	};
+	uint8_t raw;
+} SapiToken;
