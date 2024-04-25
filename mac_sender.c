@@ -81,7 +81,7 @@ void MacSender(void *argument) {
 				// Send one msg from internal queue if exist
 				//if (osMemoryPoolGetCount(queue_macData_id) != 0) { // Message in Queue
 				retCode = osMessageQueueGet(queue_macData_id, &queueMsg, NULL, 0);
-				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				//CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				if(retCode == 0){
 					queueMsg.type = TO_PHY;
 					retCode = osMessageQueuePut(
@@ -237,35 +237,37 @@ void MacSender(void *argument) {
 				src.nothing = 0;
 				length = strlen(queueMsg.anyPtr);
 
-				if(dst.addr == BROADCAST_ADDRESS) {
-					status.read = 1;
-					status.ack = 1;
-				} else {
-					status.read = 0;
-					status.ack = 0;
-				}
-
-				msg = osMemoryPoolAlloc(memPool, 0);
-				if(msg == NULL) {
-					printf("Memory allocation failed #1\r\n");
-					assert(false);
-				}
-				msg[0] = src.raw;
-				msg[1] = dst.raw;
-				msg[2] = length;
-				memcpy(&msg[3], queueMsg.anyPtr, length);
-				status.checksum = Checksum(msg);
-				msg[3+length] = status.raw;
-
-				retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
-				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
-
-				stationStatus.raw = lastToken[dst.addr+1];
-
-				if(stationStatus.chat == 1) {
-
 				if(dst.addr != BROADCAST_ADDRESS) {
-					if(dst.sapi == CHAT_SAPI) {
+					stationStatus.raw = gTokenInterface.station_list[dst.addr];
+				}
+
+					if( (stationStatus.chat == 1) || (dst.addr == BROADCAST_ADDRESS)) {
+						
+					if(dst.addr == BROADCAST_ADDRESS) {
+						status.read = 1;
+						status.ack = 1;
+					} else {
+						status.read = 0;
+						status.ack = 0;
+					}
+
+					msg = osMemoryPoolAlloc(memPool, 0);
+					if(msg == NULL) {
+						printf("Memory allocation failed #1\r\n");
+						assert(false);
+					}
+					msg[0] = src.raw;
+					msg[1] = dst.raw;
+					msg[2] = length;
+					memcpy(&msg[3], queueMsg.anyPtr, length);
+					status.checksum = Checksum(msg);
+					msg[3+length] = status.raw;
+
+					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+
+
+					if( (dst.addr != BROADCAST_ADDRESS) && (dst.sapi == CHAT_SAPI) ) {
 						lastSentMsgPtr = osMemoryPoolAlloc(memPool, 0);
 						if(lastSentMsgPtr == NULL) {
 							printf("Memory allocation failed #2\r\n");
@@ -274,16 +276,15 @@ void MacSender(void *argument) {
 						memcpy(lastSentMsgPtr, msg, length+4);
 						// TODO test if station is online
 					}
-				}
 
-				queueMsg.anyPtr = msg;
-				queueMsg.type = TO_PHY;
-				retCode = osMessageQueuePut(
-					queue_macData_id,
-					&queueMsg,
-					osPriorityNormal,
-					0);
-				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+					queueMsg.anyPtr = msg;
+					queueMsg.type = TO_PHY;
+					retCode = osMessageQueuePut(
+						queue_macData_id,
+						&queueMsg,
+						osPriorityNormal,
+						0);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				} else {
 					strPtr = queueMsg.anyPtr;
