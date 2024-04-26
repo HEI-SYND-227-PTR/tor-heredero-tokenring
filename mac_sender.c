@@ -15,7 +15,8 @@ const osMessageQueueAttr_t queue_macData_attr = {
 
 void sendToken() {
 	struct queueMsg_t queueMsg;
-	queueMsg.anyPtr = lastToken;
+	queueMsg.anyPtr = osMemoryPoolAlloc(memPool,osWaitForever);
+	memcpy(queueMsg.anyPtr, lastToken, TOKENSIZE-2);
 	queueMsg.type = TO_PHY;
 	osStatus_t retCode = osMessageQueuePut(
 		queue_phyS_id,
@@ -60,6 +61,7 @@ void MacSender(void *argument) {
 			//----------------------------------------------------------------------
 			case TOKEN: {
 				// Get token and save it
+				//lastToken = osMemoryPoolAlloc(memPool,osWaitForever);
 				memcpy(lastToken, msg, TOKENSIZE-2);
 
 				// update token
@@ -70,7 +72,8 @@ void MacSender(void *argument) {
 
 				// send to lcd
 				queueMsg.type = TOKEN_LIST;
-				queueMsg.anyPtr = lastToken;
+				memcpy(queueMsg.anyPtr , lastToken, TOKENSIZE-2);
+				//queueMsg.anyPtr = lastToken;
 				retCode = osMessageQueuePut(
 					queue_lcd_id,
 					&queueMsg,
@@ -91,6 +94,8 @@ void MacSender(void *argument) {
 						0);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				} else {
+					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
+					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 					sendToken();
 				}
 				break;
@@ -196,7 +201,8 @@ void MacSender(void *argument) {
 				}
 				gTokenInterface.station_list[gTokenInterface.myAddress] = (0x1 << TIME_SAPI) + (gTokenInterface.connected << CHAT_SAPI);
 				lastToken[gTokenInterface.myAddress+1] = gTokenInterface.station_list[gTokenInterface.myAddress];
-				
+				sendToken();
+				/*
 				queueMsg.type = TO_PHY;
 				queueMsg.anyPtr = lastToken;
 				
@@ -206,6 +212,7 @@ void MacSender(void *argument) {
 					osPriorityNormal,
 					osWaitForever);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				*/
 				break;
 			}
 			
