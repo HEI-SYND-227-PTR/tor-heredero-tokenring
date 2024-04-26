@@ -61,6 +61,7 @@ void MacSender(void *argument) {
 			//----------------------------------------------------------------------
 			case TOKEN: {
 				// Get token and save it
+//				osDelay(300);
 				//lastToken = osMemoryPoolAlloc(memPool,osWaitForever);
 				memcpy(lastToken, msg, TOKENSIZE-2);
 
@@ -73,12 +74,14 @@ void MacSender(void *argument) {
 				// send to lcd
 				queueMsg.type = TOKEN_LIST;
 				memcpy(queueMsg.anyPtr , lastToken, TOKENSIZE-2);
-				//queueMsg.anyPtr = lastToken;
 				retCode = osMessageQueuePut(
 					queue_lcd_id,
 					&queueMsg,
 					osPriorityNormal,
 					osWaitForever);
+				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				
+				retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				// Send one msg from internal queue if exist
@@ -94,8 +97,6 @@ void MacSender(void *argument) {
 						0);
 					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 				} else {
-					retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
-					CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 					sendToken();
 				}
 				break;
@@ -244,19 +245,17 @@ void MacSender(void *argument) {
 				src.nothing = 0;
 				length = strlen(queueMsg.anyPtr);
 
-				if(dst.addr != BROADCAST_ADDRESS) {
+				if(dst.addr == BROADCAST_ADDRESS) {
+					status.read = 1;
+					status.ack = 1;
+					stationStatus.raw = 0;
+				} else {
+					status.read = 0;
+					status.ack = 0;
 					stationStatus.raw = gTokenInterface.station_list[dst.addr];
 				}
 
-					if( (stationStatus.chat == 1) || (dst.addr == BROADCAST_ADDRESS)) {
-						
-					if(dst.addr == BROADCAST_ADDRESS) {
-						status.read = 1;
-						status.ack = 1;
-					} else {
-						status.read = 0;
-						status.ack = 0;
-					}
+				if( (dst.addr == BROADCAST_ADDRESS) || (stationStatus.chat == 1)) {
 
 					msg = osMemoryPoolAlloc(memPool, 0);
 					if(msg == NULL) {
@@ -281,7 +280,6 @@ void MacSender(void *argument) {
 							assert(false);
 						}
 						memcpy(lastSentMsgPtr, msg, length+4);
-						// TODO test if station is online
 					}
 
 					queueMsg.anyPtr = msg;
