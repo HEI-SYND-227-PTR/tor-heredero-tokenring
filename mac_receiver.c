@@ -23,6 +23,8 @@ void send_DATA_IND(Adresse source, Adresse destination, uint8_t* dataFramePtr) {
 	}
 	strPtr[dataFramePtr[2]] = '\0'; // null-terminate string
 	queueMsg.anyPtr = strPtr;
+	//retCode = osMemoryPoolFree(memPool, dataFramePtr);
+	//CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 	switch (destination.sapi) {
 		case TIME_SAPI:

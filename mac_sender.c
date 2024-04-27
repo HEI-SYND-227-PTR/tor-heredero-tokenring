@@ -15,7 +15,8 @@ const osMessageQueueAttr_t queue_macData_attr = {
 
 void sendToken() {
 	struct queueMsg_t queueMsg;
-	queueMsg.anyPtr = lastToken;
+	queueMsg.anyPtr = osMemoryPoolAlloc(memPool,osWaitForever);
+	memcpy(queueMsg.anyPtr, lastToken, TOKENSIZE-2);
 	queueMsg.type = TO_PHY;
 	osStatus_t retCode = osMessageQueuePut(
 		queue_phyS_id,
@@ -60,6 +61,8 @@ void MacSender(void *argument) {
 			//----------------------------------------------------------------------
 			case TOKEN: {
 				// Get token and save it
+//				osDelay(300);
+				//lastToken = osMemoryPoolAlloc(memPool,osWaitForever);
 				memcpy(lastToken, msg, TOKENSIZE-2);
 
 				// update token
@@ -70,12 +73,15 @@ void MacSender(void *argument) {
 
 				// send to lcd
 				queueMsg.type = TOKEN_LIST;
-				queueMsg.anyPtr = lastToken;
+				memcpy(queueMsg.anyPtr , lastToken, TOKENSIZE-2);
 				retCode = osMessageQueuePut(
 					queue_lcd_id,
 					&queueMsg,
 					osPriorityNormal,
 					osWaitForever);
+				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				
+				retCode = osMemoryPoolFree(memPool, queueMsg.anyPtr);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
 
 				// Send one msg from internal queue if exist
@@ -196,7 +202,8 @@ void MacSender(void *argument) {
 				}
 				gTokenInterface.station_list[gTokenInterface.myAddress] = (0x1 << TIME_SAPI) + (gTokenInterface.connected << CHAT_SAPI);
 				lastToken[gTokenInterface.myAddress+1] = gTokenInterface.station_list[gTokenInterface.myAddress];
-				
+				sendToken();
+				/*
 				queueMsg.type = TO_PHY;
 				queueMsg.anyPtr = lastToken;
 				
@@ -206,6 +213,7 @@ void MacSender(void *argument) {
 					osPriorityNormal,
 					osWaitForever);
 				CheckRetCode(retCode, __LINE__, __FILE__, CONTINUE);
+				*/
 				break;
 			}
 			
@@ -237,19 +245,17 @@ void MacSender(void *argument) {
 				src.nothing = 0;
 				length = strlen(queueMsg.anyPtr);
 
-				if(dst.addr != BROADCAST_ADDRESS) {
+				if(dst.addr == BROADCAST_ADDRESS) {
+					status.read = 1;
+					status.ack = 1;
+					stationStatus.raw = 0;
+				} else {
+					status.read = 0;
+					status.ack = 0;
 					stationStatus.raw = gTokenInterface.station_list[dst.addr];
 				}
 
-					if( (stationStatus.chat == 1) || (dst.addr == BROADCAST_ADDRESS)) {
-						
-					if(dst.addr == BROADCAST_ADDRESS) {
-						status.read = 1;
-						status.ack = 1;
-					} else {
-						status.read = 0;
-						status.ack = 0;
-					}
+				if( (dst.addr == BROADCAST_ADDRESS) || (stationStatus.chat == 1)) {
 
 					msg = osMemoryPoolAlloc(memPool, 0);
 					if(msg == NULL) {
@@ -274,7 +280,6 @@ void MacSender(void *argument) {
 							assert(false);
 						}
 						memcpy(lastSentMsgPtr, msg, length+4);
-						// TODO test if station is online
 					}
 
 					queueMsg.anyPtr = msg;
